@@ -76,7 +76,7 @@ void emelf_print_sections(struct emelf *e)
 	int i;
 
 	printf("Sections\n");
-	printf("	  Type	   Offset  Chunk Elem. Size\n");
+	printf("      Type       Offset  Chunk Elem. Size\n");
 	for (i=0 ; i<e->eh.sec_count ; i++) {
 		printf("  %-3i %-10s %-6i  %-5i %-5i %-5i\n",
 			i,

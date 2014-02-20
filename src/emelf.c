@@ -260,7 +260,7 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name)
 			emelf_errno = res;
 			return -1;
 		}
-		e->hsymbol = dh_create(65536, 1);
+		e->hsymbol = dh_create(16000, 1);
 	}
 
 	while (e->symbol_names_len + strlen(sym_name) >= e->symbol_names_space) {
@@ -289,11 +289,26 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name)
 	strcpy(e->symbol_names + e->symbol_names_len, sym_name);
 	e->symbol_names_len += strlen(sym_name) + 1;
 
-	dh_add(e->hsymbol, sym_name, 0, s->offset);
+	if (s->flags & EMELF_SYM_GLOBAL) {
+		dh_add(e->hsymbol, sym_name, 0, s->offset);
+	}
 
 	e->symbol_count++;
 
 	return s->offset;
+}
+
+// -----------------------------------------------------------------------
+struct emelf_symbol * emelf_symbol_get(struct emelf *e, char *sym_name)
+{
+	struct dh_elem * s;
+	s = dh_get(e->hsymbol, sym_name);
+
+	if (!s) {
+		return NULL;
+	}
+
+	return e->symbol + s->value;
 }
 
 // -----------------------------------------------------------------------
@@ -390,9 +405,11 @@ struct emelf * emelf_load(FILE *f)
 
 	// hash symbols
 	if (e->symbol_slots) {
-		e->hsymbol = dh_create(65536, 1);
+		e->hsymbol = dh_create(16000, 1);
 		for (i=0 ; i<e->symbol_count ; i++) {
-			dh_add(e->hsymbol, e->symbol_names + e->symbol[i].offset, 0, e->symbol[i].offset);
+			if (e->symbol[i].flags & EMELF_SYM_GLOBAL) {
+				dh_add(e->hsymbol, e->symbol_names + e->symbol[i].offset, 0, e->symbol[i].offset);
+			}
 		}
 	}
 
