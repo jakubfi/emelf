@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <arpa/inet.h>
 
 #include "emelf.h"
 
@@ -95,9 +96,9 @@ void emelf_print_relocs(struct emelf *e)
 	int i;
 
 	printf("Relocs\n");
-	printf("  Addr    Value    Reloc\n");
+	printf("  Addr    Value     Reloc\n");
 	for (i=0 ; i<e->reloc_count ; i++) {
-		printf("  0x%04x  %-6i %s %s\n",
+		printf("  0x%04x  %-6i  %s %s\n",
 			e->reloc[i].addr,
 			(int16_t) ntohs(e->image[e->reloc[i].addr]),
 			(e->reloc[i].oper == EMELF_RELOC_OP_SUB) ? "-" : "+",
