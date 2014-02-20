@@ -76,10 +76,15 @@ void emelf_print_sections(struct emelf *e)
 {
 	int i;
 
+	if (e->eh.sec_count <= 0) {
+		printf("No sections\n");
+		return;
+	}
+
 	printf("Sections\n");
-	printf("      Type       Offset  Chunk Elem. Size\n");
+	printf("      Type       Offset  Chunk  Elems  Size\n");
 	for (i=0 ; i<e->eh.sec_count ; i++) {
-		printf("  %-3i %-10s %-6i  %-5i %-5i %-5i\n",
+		printf("  %-3i %-10s %-7i %-6i %-6i %-6i\n",
 			i,
 			emelf_section_types_n[e->section[i].type],
 			e->section[i].offset,
@@ -95,7 +100,12 @@ void emelf_print_relocs(struct emelf *e)
 {
 	int i;
 
-	printf("Relocs\n");
+	if (e->reloc_count <= 0) {
+		printf("No relocations\n");
+		return;
+	}
+
+	printf("Relocations\n");
 	printf("  Addr    Value     Reloc\n");
 	for (i=0 ; i<e->reloc_count ; i++) {
 		printf("  0x%04x  %-6i  %s %s\n",
@@ -111,6 +121,11 @@ void emelf_print_relocs(struct emelf *e)
 void emelf_print_symbols(struct emelf *e)
 {
 	int i;
+
+	if (e->symbol_count <= 0) {
+		printf("No symbols\n");
+		return;
+	}
 
 	printf("Symbols\n");
 	for (i=0 ; i<e->symbol_count; i++) {
