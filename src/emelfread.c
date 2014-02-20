@@ -129,7 +129,15 @@ void emelf_print_symbols(struct emelf *e)
 
 	printf("Symbols\n");
 	for (i=0 ; i<e->symbol_count; i++) {
-		printf("  %s : %i\n", e->symbol_names + e->symbol[i].offset, e->symbol[i].flags);
+		if (e->symbol[i].flags & EMELF_SYM_GLOBAL) {
+			printf("  %-10s %s %i\n",
+				e->symbol_names + e->symbol[i].offset,
+				(e->symbol[i].flags & EMELF_SYM_RELATIVE) ? "~" : "=",
+				e->symbol[i].value
+			);
+		} else {
+			printf("  %-10s = ?\n", e->symbol_names + e->symbol[i].offset);
+		}
 	}
 }
 

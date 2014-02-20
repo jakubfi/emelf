@@ -128,6 +128,7 @@ struct emelf_section {
 };
 
 struct emelf_symbol {
+	uint16_t value;
 	uint16_t flags;
 	uint16_t offset;
 };
@@ -153,7 +154,7 @@ struct emelf {
 	int reloc_slots;
 	int reloc_count;
 
-	struct dh_table *hsymbol;
+	struct edh_table *hsymbol;
 	struct emelf_symbol *symbol;
 	char *symbol_names;
 	int symbol_slots;
@@ -171,8 +172,7 @@ int emelf_entry_set(struct emelf *e, unsigned a);
 int emelf_image_append(struct emelf *e, uint16_t *i, unsigned ilen);
 
 int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned source, unsigned oper, int sym_idx);
-int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name);
-struct emelf_symbol * emelf_symbol_get(struct emelf *e, char *sym_name);
+int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t value);
 
 struct emelf * emelf_load(FILE *f);
 int emelf_write(struct emelf *e, FILE *f);

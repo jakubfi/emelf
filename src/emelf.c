@@ -22,7 +22,7 @@
 #include <arpa/inet.h>
 
 #include "emelf.h"
-#include "dh.h"
+#include "edh.h"
 
 int emelf_errno;
 
@@ -99,12 +99,14 @@ struct emelf * emelf_create(unsigned type, unsigned flags, unsigned cpu)
 		goto cleanup;
 	}
 
+	// fill in header
 	strncpy(e->eh.magic, EMELF_MAGIC, EMELF_MAGIC_LEN);
 	e->eh.version = EMELF_VER;
 	e->eh.type = type;
 	e->eh.flags = flags;
 	e->eh.cpu = cpu;
 
+	// update max addr according to CPU
 	switch (e->eh.cpu) {
 		case EMELF_CPU_MX16:
 			e->amax = IMAGE_MAX_MX16;
@@ -130,7 +132,7 @@ void emelf_destroy(struct emelf *e)
 	free(e->reloc);
 	free(e->symbol);
 	free(e->symbol_names);
-	dh_destroy(e->hsymbol);
+	edh_destroy(e->hsymbol);
 	free(e);
 }
 
@@ -158,6 +160,7 @@ int emelf_section_add(struct emelf *e, int type)
 		return EMELF_E_COUNT;
 	}
 
+	// reallocate sections if necessary
 	if (e->eh.sec_count >= e->section_slots) {
 		e->section = realloc(e->section, ALLOC_SEGMENT * SIZE_SECTION);
 		if (!e->section) {
@@ -166,9 +169,7 @@ int emelf_section_add(struct emelf *e, int type)
 		e->section_slots += ALLOC_SEGMENT;
 	}
 
-	struct emelf_section *s = e->section + e->eh.sec_count;
-	s->type = type;
-
+	e->section[e->eh.sec_count].type = type;
 	e->eh.sec_count++;
 
 	return EMELF_E_OK;
@@ -185,6 +186,7 @@ int emelf_image_append(struct emelf *e, uint16_t *i, unsigned ilen)
 		return EMELF_E_OK;
 	}
 
+	// add image section
 	if (!e->image_pos) {
 		res = emelf_section_add(e, EMELF_SEC_IMAGE);
 		if (res != EMELF_E_OK) {
@@ -213,6 +215,7 @@ int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned source, unsigned op
 		return EMELF_E_ADDR;
 	}
 
+	// add reloc section
 	if (!e->reloc_slots) {
 		res = emelf_section_add(e, EMELF_SEC_RELOC);
 		if (res != EMELF_E_OK) {
@@ -220,6 +223,7 @@ int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned source, unsigned op
 		}
 	}
 
+	// reallocate relocations if necessary
 	if (e->reloc_count >= e->reloc_slots) {
 		e->reloc = realloc(e->reloc, ALLOC_SEGMENT * SIZE_RELOC);
 		if (!e->reloc) {
@@ -233,9 +237,7 @@ int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned source, unsigned op
 	r->addr = addr;
 	r->source = source;
 	r->oper = oper;
-	if (sym_idx >= 0) {
-		r->sym_idx = sym_idx;
-	}
+	r->sym_idx = sym_idx;
 
 	e->reloc_count++;
 
@@ -243,12 +245,14 @@ int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned source, unsigned op
 }
 
 // -----------------------------------------------------------------------
-int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name)
+int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t value)
 {
 	assert(e);
 
 	int res;
+	struct edh_elem *sym;
 
+	// add symbol sections if none
 	if (!e->symbol_slots) {
 		res = emelf_section_add(e, EMELF_SEC_SYM);
 		if (res != EMELF_E_OK) {
@@ -260,9 +264,16 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name)
 			emelf_errno = res;
 			return -1;
 		}
-		e->hsymbol = dh_create(16000, 1);
+		e->hsymbol = edh_create(16000);
 	}
 
+	// if symbol is defined, return its index
+	sym = edh_get(e->hsymbol, sym_name);
+	if (sym) {
+		return sym->value;
+	}
+
+	// realloc symbol_names if necessary
 	while (e->symbol_names_len + strlen(sym_name) >= e->symbol_names_space) {
 		e->symbol_names = realloc(e->symbol_names, ALLOC_SEGMENT);
 		if (!e->symbol_names) {
@@ -272,6 +283,7 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name)
 		e->symbol_names_space += ALLOC_SEGMENT;
 	}
 
+	// realloc symbols if necessary
 	if (e->symbol_count >= e->symbol_slots) {
 		e->symbol = realloc(e->symbol, ALLOC_SEGMENT * SIZE_SYMBOL);
 		if (!e->symbol) {
@@ -283,32 +295,20 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name)
 
 	struct emelf_symbol *s = e->symbol + e->symbol_count;
 
+	// store symbol
 	s->flags = flags;
 	s->offset = e->symbol_names_len;
+	s->value = value;
 
+	// store symbol name
 	strcpy(e->symbol_names + e->symbol_names_len, sym_name);
 	e->symbol_names_len += strlen(sym_name) + 1;
 
-	if (s->flags & EMELF_SYM_GLOBAL) {
-		dh_add(e->hsymbol, sym_name, 0, s->offset);
-	}
+	edh_add(e->hsymbol, sym_name, 0, s->offset);
 
 	e->symbol_count++;
 
 	return s->offset;
-}
-
-// -----------------------------------------------------------------------
-struct emelf_symbol * emelf_symbol_get(struct emelf *e, char *sym_name)
-{
-	struct dh_elem * s;
-	s = dh_get(e->hsymbol, sym_name);
-
-	if (!s) {
-		return NULL;
-	}
-
-	return e->symbol + s->value;
 }
 
 // -----------------------------------------------------------------------
@@ -383,7 +383,7 @@ struct emelf * emelf_load(FILE *f)
 				break;
 			case EMELF_SEC_SYM_NAMES:
 				e->symbol_names = malloc(SIZE_CHAR * e->section[i].size);
-				res = nfread(e->symbol_names, SIZE_CHAR, e->section[i].size, f);
+				res = fread(e->symbol_names, SIZE_CHAR, e->section[i].size, f);
 				e->symbol_names_len = e->symbol_names_space = res;
 				break;
 			case EMELF_SEC_DEBUG:
@@ -403,13 +403,11 @@ struct emelf * emelf_load(FILE *f)
 		}
 	}
 
-	// hash symbols
+	// update symbol hash
 	if (e->symbol_slots) {
-		e->hsymbol = dh_create(16000, 1);
+		e->hsymbol = edh_create(16000);
 		for (i=0 ; i<e->symbol_count ; i++) {
-			if (e->symbol[i].flags & EMELF_SYM_GLOBAL) {
-				dh_add(e->hsymbol, e->symbol_names + e->symbol[i].offset, 0, e->symbol[i].offset);
-			}
+			edh_add(e->hsymbol, e->symbol_names + e->symbol[i].offset, 0, e->symbol[i].offset);
 		}
 	}
 
@@ -468,7 +466,7 @@ int emelf_write(struct emelf *e, FILE *f)
 				res = nfwrite(e->symbol, SIZE_SYMBOL, e->symbol_count, f);
 				break;
 			case EMELF_SEC_SYM_NAMES:
-				res = nfwrite(e->symbol_names, SIZE_CHAR, e->symbol_names_len, f);
+				res = fwrite(e->symbol_names, SIZE_CHAR, e->symbol_names_len, f);
 				break;
 			case EMELF_SEC_DEBUG:
 				res = 0;

@@ -18,44 +18,36 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
 #include <ctype.h>
 
-#include "dh.h"
+#include "edh.h"
 
 // -----------------------------------------------------------------------
-struct dh_table * dh_create(int size, int case_sens)
+struct edh_table * edh_create(int size)
 {
-	struct dh_table *dh = malloc(sizeof(struct dh_table));
+	struct edh_table *dh = malloc(sizeof(struct edh_table));
 	if (!dh) {
 		return NULL;
 	}
 
-	dh->slots = calloc(size, sizeof(struct dh_elem));
+	dh->slots = calloc(size, sizeof(struct edh_elem));
 	if (!dh->slots) {
 		free(dh);
 		return NULL;
 	}
 	dh->size = size;
-	if (case_sens) {
-		dh->str_cmp = strcmp;
-		dh->case_sens = 1;
-	} else {
-		dh->str_cmp = strcasecmp;
-		dh->case_sens = 0;
-	}
 
 	return dh;
 }
 
 // -----------------------------------------------------------------------
-unsigned dh_hash(struct dh_table *dh, char *str)
+unsigned edh_hash(struct edh_table *dh, char *str)
 {
 	unsigned v = 0;
 	char *c = str;
 
 	while (c && *c) {
-		v = (dh->case_sens ? *c : tolower(*c)) + (v<<5) - v;
+		v = *c + (v<<5) - v;
 		c++;
 	}
 
@@ -63,13 +55,13 @@ unsigned dh_hash(struct dh_table *dh, char *str)
 }
 
 // -----------------------------------------------------------------------
-struct dh_elem * dh_get(struct dh_table *dh, char *name)
+struct edh_elem * edh_get(struct edh_table *dh, char *name)
 {
-	unsigned hash = dh_hash(dh, name);
-	struct dh_elem *elem = dh->slots[hash];
+	unsigned hash = edh_hash(dh, name);
+	struct edh_elem *elem = dh->slots[hash];
 
 	while (elem) {
-		if (!(dh->str_cmp(name, elem->name))) {
+		if (!strcmp(name, elem->name)) {
 			return elem;
 		}
 		elem = elem->next;
@@ -79,41 +71,19 @@ struct dh_elem * dh_get(struct dh_table *dh, char *name)
 }
 
 // -----------------------------------------------------------------------
-struct dh_elem * dh_gett(struct dh_table *dh, char *name, int type_mask)
+struct edh_elem * edh_add(struct edh_table *dh, char *name, int type, int value)
 {
-	struct dh_elem *e = dh_gett(dh, name, 0);
-	if (!e || ((e->type & type_mask) != type_mask)) {
-		return NULL;
-	} else {
-		return e;
-	}
-}
-
-// -----------------------------------------------------------------------
-struct dh_elem * dh_getnt(struct dh_table *dh, char *name, int type_mask)
-{
-	struct dh_elem *e = dh_gett(dh, name, 0);
-	if (!e || (e->type & type_mask)) {
-		return NULL;
-	} else {
-		return e;
-	}
-}
-
-// -----------------------------------------------------------------------
-struct dh_elem * dh_add(struct dh_table *dh, char *name, int type, int value)
-{
-	unsigned hash = dh_hash(dh, name);
-	struct dh_elem *elem = dh->slots[hash];
+	unsigned hash = edh_hash(dh, name);
+	struct edh_elem *elem = dh->slots[hash];
 
 	while (elem) {
-		if (!dh->str_cmp(name, elem->name)) {
+		if (!strcmp(name, elem->name)) {
 			return NULL;
 		}
 		elem = elem->next;
 	}
 
-	struct dh_elem *new_elem = malloc(sizeof(struct dh_elem));
+	struct edh_elem *new_elem = malloc(sizeof(struct edh_elem));
 	new_elem->name = strdup(name);
 	new_elem->type = type;
 	new_elem->value = value;
@@ -124,14 +94,14 @@ struct dh_elem * dh_add(struct dh_table *dh, char *name, int type, int value)
 }
 
 // -----------------------------------------------------------------------
-int dh_delete(struct dh_table *dh, char *name)
+int edh_delete(struct edh_table *dh, char *name)
 {
-	unsigned hash = dh_hash(dh, name);
-	struct dh_elem *prev = NULL;
-	struct dh_elem *elem = dh->slots[hash];
+	unsigned hash = edh_hash(dh, name);
+	struct edh_elem *prev = NULL;
+	struct edh_elem *elem = dh->slots[hash];
 
     while (elem) {
-        if (!(dh->str_cmp(name, elem->name))) {
+        if (!strcmp(name, elem->name)) {
 			if (prev) {
 				prev->next = elem->next;
 			} else {
@@ -148,11 +118,11 @@ int dh_delete(struct dh_table *dh, char *name)
 }
 
 // -----------------------------------------------------------------------
-void dh_destroy(struct dh_table *dh)
+void edh_destroy(struct edh_table *dh)
 {
 	int i;
-	struct dh_elem *elem;
-	struct dh_elem *tmp;
+	struct edh_elem *elem;
+	struct edh_elem *tmp;
 
 	if (!dh) return;
 
@@ -171,12 +141,12 @@ void dh_destroy(struct dh_table *dh)
 }
 
 // -----------------------------------------------------------------------
-void dh_dump_stats(struct dh_table *dh)
+void edh_dump_stats(struct edh_table *dh)
 {
 	int i;
 	int elem_total = 0, collisions = 0;
 
-	struct dh_elem *elem;
+	struct edh_elem *elem;
 
 	if (!dh) return;
 
@@ -204,48 +174,6 @@ void dh_dump_stats(struct dh_table *dh)
 			printf(" %10d: %d\n", i, elem_slot[i]-1);
 		}
 	}
-}
-
-// -----------------------------------------------------------------------
-int dh_sanity_check(struct dh_table *dh)
-{
-	int ret = -1;
-	int i;
-	struct dh_elem *elem;
-	char *lcname, *ucname, *c;
-
-	if (!dh) return -1;
-
-	for(i=0 ; i<dh->size ; i++) {
-		elem = dh->slots[i];
-		while (elem) {
-			if (dh->case_sens) {
-				if (!dh_get(dh, elem->name)) {
-					ret--;
-					printf("Could not find: %s\n", elem->name);
-				}
-			} else {
-				lcname = strdup(elem->name);
-				ucname = strdup(elem->name);
-				c = lcname;
-				while (c && *c) *c++ = tolower(*c);
-				c = ucname;
-				while (c && *c) *c++ = toupper(*c);
-				if (!dh_get(dh, ucname)) {
-					ret--;
-					printf("Could not find (uower case): %s\n", ucname);
-				}
-				if (!dh_get(dh, lcname)) {
-					ret--;
-					printf("Could not find (lower case): %s\n", lcname);
-				}
-				free(lcname);
-				free(ucname);
-			}
-			elem = elem->next;
-		}
-	}
-	return ret;
 }
 
 // vim: tabstop=4 autoindent

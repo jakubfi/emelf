@@ -1,5 +1,5 @@
 add_library(emelf SHARED
-	dh.c
+	edh.c
 	emelf.c
 )
 

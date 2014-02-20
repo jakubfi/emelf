@@ -18,31 +18,25 @@
 #ifndef DH_H
 #define DH_H
 
-typedef int (*str_cmp_fun)(const char *s1, const char *s2);
-
-struct dh_elem {
+struct edh_elem {
 	char *name;
 	int type;
 	int value;
-	struct dh_elem *next;
+	struct edh_elem *next;
 };
 
-struct dh_table {
+struct edh_table {
 	int size;
-	struct dh_elem **slots;
-	int case_sens;
-	str_cmp_fun str_cmp;
+	struct edh_elem **slots;
 };
 
-struct dh_table * dh_create(int size, int case_sens);
-unsigned dh_hash(struct dh_table *dh, char *name);
-struct dh_elem * dh_get(struct dh_table *dh, char *name);
-struct dh_elem * dh_gett(struct dh_table *dh, char *name, int type_mask);
-struct dh_elem * dh_getnt(struct dh_table *dh, char *name, int type_mask);
-struct dh_elem * dh_add(struct dh_table *dh, char *name, int type, int value);
-int dh_delete(struct dh_table *dh, char *name);
-void dh_destroy(struct dh_table *dh);
-void dh_dump_stats(struct dh_table *dh);
+struct edh_table * edh_create(int size);
+unsigned edh_hash(struct edh_table *dh, char *name);
+struct edh_elem * edh_get(struct edh_table *dh, char *name);
+struct edh_elem * edh_add(struct edh_table *dh, char *name, int type, int value);
+int edh_delete(struct edh_table *dh, char *name);
+void edh_destroy(struct edh_table *dh);
+void edh_dump_stats(struct edh_table *dh);
 
 #endif
 
