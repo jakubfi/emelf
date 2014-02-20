@@ -95,10 +95,11 @@ void emelf_print_relocs(struct emelf *e)
 	int i;
 
 	printf("Relocs\n");
-	printf("  Addr   +/- Reloc\n");
+	printf("  Addr    Value    Reloc\n");
 	for (i=0 ; i<e->reloc_count ; i++) {
-		printf("  0x%04x  %s  %s\n",
+		printf("  0x%04x  %-6i %s %s\n",
 			e->reloc[i].addr,
+			(int16_t) ntohs(e->image[e->reloc[i].addr]),
 			(e->reloc[i].oper == EMELF_RELOC_OP_SUB) ? "-" : "+",
 			(e->reloc[i].source == EMELF_RELOC_BASE) ? "@start" : e->symbol_names + e->symbol[e->reloc[i].sym_idx].offset
 		);
