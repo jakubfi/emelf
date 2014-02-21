@@ -26,18 +26,8 @@
 
 int emelf_errno;
 
-int emelf_elem_sizes[] = {
-	0,
-	SIZE_WORD,
-	SIZE_RELOC,
-	SIZE_SYMBOL,
-	SIZE_CHAR,
-	0,
-	SIZE_CHAR
-};
-
 // -----------------------------------------------------------------------
-void ahtons(uint16_t *t, int len)
+static void ahtons(uint16_t *t, int len)
 {
 	int pos = len-1;
 	while (pos >= 0) {
@@ -47,7 +37,7 @@ void ahtons(uint16_t *t, int len)
 }
 
 // -----------------------------------------------------------------------
-void antohs(uint16_t *t, int len)
+static void antohs(uint16_t *t, int len)
 {
 	int pos = len-1;
 	while (pos >= 0) {
@@ -57,7 +47,7 @@ void antohs(uint16_t *t, int len)
 }
 
 // -----------------------------------------------------------------------
-size_t nfread(void *ptr, size_t size, size_t nmemb, FILE *stream)
+static size_t nfread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
 	int res;
 	res = fread(ptr, size, nmemb, stream);
@@ -70,7 +60,7 @@ size_t nfread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 }
 
 // -----------------------------------------------------------------------
-size_t nfwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
+static size_t nfwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
 	int res;
 	uint16_t *tmp = malloc(size * nmemb);
@@ -86,7 +76,7 @@ size_t nfwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 }
 
 // -----------------------------------------------------------------------
-struct emelf * emelf_create(unsigned type, unsigned flags, unsigned cpu)
+struct emelf * emelf_create(unsigned type, unsigned cpu)
 {
 	struct emelf *e = NULL;
 
@@ -103,7 +93,6 @@ struct emelf * emelf_create(unsigned type, unsigned flags, unsigned cpu)
 	strncpy(e->eh.magic, EMELF_MAGIC, EMELF_MAGIC_LEN);
 	e->eh.version = EMELF_VER;
 	e->eh.type = type;
-	e->eh.flags = flags;
 	e->eh.cpu = cpu;
 
 	// update max addr according to CPU
@@ -252,7 +241,7 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t v
 	int res;
 	struct edh_elem *sym;
 
-	// add symbol sections if none
+	// add symbol sections and hash if none
 	if (!e->symbol_slots) {
 		res = emelf_section_add(e, EMELF_SEC_SYM);
 		if (res != EMELF_E_OK) {

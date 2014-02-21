@@ -41,7 +41,6 @@
 #define SIZE_RELOC sizeof(struct emelf_reloc)
 
 extern int emelf_errno;
-extern int emelf_elem_sizes[];
 
 enum emelf_errors {
 	EMELF_E_OK = 0,
@@ -163,7 +162,7 @@ struct emelf {
 	int symbol_names_len;
 };
 
-struct emelf * emelf_create(unsigned type, unsigned flags, unsigned cpu);
+struct emelf * emelf_create(unsigned type, unsigned cpu);
 void emelf_destroy(struct emelf *e);
 
 int emelf_section_add(struct emelf *e, int type);

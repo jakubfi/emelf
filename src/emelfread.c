@@ -54,6 +54,16 @@ char *emelf_section_types_n[] = {
 	"IDENT"
 };
 
+int emelf_elem_sizes[] = {
+	0,
+	SIZE_WORD,
+	SIZE_RELOC,
+	SIZE_SYMBOL,
+	SIZE_CHAR,
+	0,
+	SIZE_CHAR
+};
+
 // -----------------------------------------------------------------------
 void emelf_print_header(struct emelf *e)
 {
@@ -129,15 +139,14 @@ void emelf_print_symbols(struct emelf *e)
 
 	printf("Symbols\n");
 	for (i=0 ; i<e->symbol_count; i++) {
+		printf("  %-10s = ", e->symbol_names + e->symbol[i].offset);
 		if (e->symbol[i].flags & EMELF_SYM_GLOBAL) {
-			printf("  %-10s %s %i\n",
-				e->symbol_names + e->symbol[i].offset,
-				(e->symbol[i].flags & EMELF_SYM_RELATIVE) ? "~" : "=",
-				e->symbol[i].value
-			);
+			printf("%i", e->symbol[i].value);
+			if (e->symbol[i].flags & EMELF_SYM_RELATIVE) printf(" + @start");
 		} else {
-			printf("  %-10s = ?\n", e->symbol_names + e->symbol[i].offset);
+			printf("?");
 		}
+		printf("\n");
 	}
 }
 
