@@ -194,7 +194,7 @@ int emelf_image_append(struct emelf *e, uint16_t *i, unsigned ilen)
 }
 
 // -----------------------------------------------------------------------
-int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned source, unsigned oper, int sym_idx)
+int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned flags, int sym_idx)
 {
 	assert(e);
 
@@ -224,8 +224,7 @@ int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned source, unsigned op
 	struct emelf_reloc *r = e->reloc + e->reloc_count;
 
 	r->addr = addr;
-	r->source = source;
-	r->oper = oper;
+	r->flags = flags;
 	r->sym_idx = sym_idx;
 
 	e->reloc_count++;

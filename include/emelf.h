@@ -94,16 +94,11 @@ enum emelf_symbol_flags {
 	EMELF_SYM_RELATIVE	= 1 << 1,
 };
 
-enum emelf_reloc_source {
-	EMELF_RELOC_UNKNOWN,
-	EMELF_RELOC_BASE,
-	EMELF_RELOC_SYM,
-};
-
-enum emelf_reloc_oper {
-	EMELF_RELOC_OP_UNKNOWN,
-	EMELF_RELOC_OP_ADD,
-	EMELF_RELOC_OP_SUB,
+enum emelf_reloc_flags {
+	EMELF_RELOC_NONE	= 0,
+	EMELF_RELOC_BASE	= 1 << 0,
+	EMELF_RELOC_SYM		= 1 << 1,
+	EMELF_RELOC_SYM_NEG	= 1 << 2,
 };
 
 struct emelf_header {
@@ -134,8 +129,7 @@ struct emelf_symbol {
 
 struct emelf_reloc {
 	uint16_t addr;
-	uint16_t source;
-	uint16_t oper;
+	uint16_t flags;
 	uint16_t sym_idx;
 };
 
@@ -170,7 +164,7 @@ int emelf_section_add(struct emelf *e, int type);
 int emelf_entry_set(struct emelf *e, unsigned a);
 int emelf_image_append(struct emelf *e, uint16_t *i, unsigned ilen);
 
-int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned source, unsigned oper, int sym_idx);
+int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned flags, int sym_idx);
 int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t value);
 
 struct emelf * emelf_load(FILE *f);

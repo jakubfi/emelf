@@ -116,14 +116,22 @@ void emelf_print_relocs(struct emelf *e)
 	}
 
 	printf("Relocations\n");
-	printf("  Addr    Value     Reloc\n");
+	printf("  Addr    Value   Reloc\n");
 	for (i=0 ; i<e->reloc_count ; i++) {
-		printf("  0x%04x  %-6i  %s %s\n",
-			e->reloc[i].addr,
-			(int16_t) ntohs(e->image[e->reloc[i].addr]),
-			(e->reloc[i].oper == EMELF_RELOC_OP_SUB) ? "-" : "+",
-			(e->reloc[i].source == EMELF_RELOC_BASE) ? "@start" : e->symbol_names + e->symbol[e->reloc[i].sym_idx].offset
-		);
+		printf("  0x%04x  %-7i ", e->reloc[i].addr, (int16_t) ntohs(e->image[e->reloc[i].addr]));
+		if (e->reloc[i].flags & EMELF_RELOC_BASE) {
+			printf("@start ");
+			if (e->reloc[i].flags & EMELF_RELOC_SYM) printf("%s %s",
+				(e->reloc[i].flags & EMELF_RELOC_SYM_NEG) ? "-" : "+",
+				e->symbol_names + e->symbol[e->reloc[i].sym_idx].offset
+			);
+		} else {
+			if (e->reloc[i].flags & EMELF_RELOC_SYM) printf("%s%s",
+				(e->reloc[i].flags & EMELF_RELOC_SYM_NEG) ? "-" : "",
+				e->symbol_names + e->symbol[e->reloc[i].sym_idx].offset
+			);
+		}
+		printf("\n");
 	}
 }
 
