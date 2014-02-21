@@ -92,7 +92,7 @@ void emelf_print_sections(struct emelf *e)
 	}
 
 	printf("Sections\n");
-	printf("      Type       Offset  Chunk  Elems  Size\n");
+	printf("      Type       Offset  Chunk  Elems  Bytes\n");
 	for (i=0 ; i<e->eh.sec_count ; i++) {
 		printf("  %-3i %-10s %-7i %-6i %-6i %-6i\n",
 			i,
@@ -161,7 +161,7 @@ void emelf_print_symbols(struct emelf *e)
 // -----------------------------------------------------------------------
 void usage()
 {
-	printf("Usage: emelfread [options] file\n");
+	printf("Usage: emelfread options file\n");
 	printf("Where options are one or more of:\n");
 	printf("   -e        : show EMELF header\n");
 	printf("   -s        : show sections\n");
@@ -234,6 +234,12 @@ int main(int argc, char **argv)
 	res = parse_args(argc, argv);
 	if (res < 0) {
 		exit(res);
+	}
+
+	if (show_header+show_sections+show_relocs+show_symbols+output_image == 0) {
+		printf("Nothing to do, specify at least one of options: -esrnao\n");
+		usage();
+		exit(-1);
 	}
 
 	f = fopen(input_file, "r");
