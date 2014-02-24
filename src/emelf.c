@@ -300,6 +300,17 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t v
 }
 
 // -----------------------------------------------------------------------
+struct emelf_symbol * emelf_symbol_get(struct emelf *e, char *sym_name)
+{
+	struct edh_elem *elem;
+	elem = edh_get(e->hsymbol, sym_name);
+	if (!elem) {
+		return NULL;
+	}
+	return e->symbol + elem->value;
+}
+
+// -----------------------------------------------------------------------
 struct emelf * emelf_load(FILE *f)
 {
 	int i;
@@ -487,6 +498,12 @@ int emelf_write(struct emelf *e, FILE *f)
 	}
 
 	return EMELF_E_OK;
+}
+
+// -----------------------------------------------------------------------
+int emelf_has_entry(struct emelf *e)
+{
+	return (e->eh.flags & EMELF_FLAG_ENTRY) ? 1 : 0;
 }
 
 // vim: tabstop=4 autoindent

@@ -166,9 +166,12 @@ int emelf_image_append(struct emelf *e, uint16_t *i, unsigned ilen);
 
 int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned flags, int sym_idx);
 int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t value);
+struct emelf_symbol * emelf_symbol_get(struct emelf *e, char *sym_name);
 
 struct emelf * emelf_load(FILE *f);
 int emelf_write(struct emelf *e, FILE *f);
+
+int emelf_has_entry(struct emelf *e);
 
 #endif
 

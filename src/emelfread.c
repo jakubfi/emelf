@@ -118,7 +118,7 @@ void emelf_print_relocs(struct emelf *e)
 	printf("Relocations\n");
 	printf("  Addr    Value   Reloc\n");
 	for (i=0 ; i<e->reloc_count ; i++) {
-		printf("  0x%04x  %-7i ", e->reloc[i].addr, (int16_t) ntohs(e->image[e->reloc[i].addr]));
+		printf("  0x%04x  %-7i ", e->reloc[i].addr, (int16_t) e->image[e->reloc[i].addr]);
 		if (e->reloc[i].flags & EMELF_RELOC_BASE) {
 			printf("@start ");
 			if (e->reloc[i].flags & EMELF_RELOC_SYM) printf("%s %s",
