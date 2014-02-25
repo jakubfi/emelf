@@ -111,8 +111,8 @@ struct emelf_header {
 	uint16_t abi_version;
 	uint16_t entry;
 	uint16_t sec_count;
-	uint16_t sec_header;
-	uint16_t reserved[32];
+	uint16_t sec_header_hi;
+	uint16_t sec_header_lo;
 };
 
 struct emelf_section {

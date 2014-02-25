@@ -358,7 +358,8 @@ struct emelf * emelf_load(FILE *f)
 		goto cleanup;
 	}
 
-	res = fseek(f, e->eh.sec_header, SEEK_SET);
+	int section_hdr = ((int) (e->eh.sec_header_hi) << 16) + e->eh.sec_header_lo;
+	res = fseek(f, section_hdr, SEEK_SET);
 	if (res < 0) {
 		emelf_errno = EMELF_E_FREAD;
 		goto cleanup;
@@ -499,10 +500,12 @@ int emelf_write(struct emelf *e, FILE *f)
 		e->section[i].size = res;
 	}
 
-	e->eh.sec_header = ftell(f);
-	if (e->eh.sec_header < 0) {
+	int section_hdr = ftell(f);
+	if (section_hdr < 0) {
 		return EMELF_E_FWRITE;
 	}
+	e->eh.sec_header_hi = section_hdr >> 16;
+	e->eh.sec_header_lo = section_hdr & 65535;
 
 	// write sections
 	res = nfwrite(e->section, SIZE_SECTION, e->eh.sec_count, f);
