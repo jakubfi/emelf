@@ -94,13 +94,14 @@ void emelf_print_sections(struct emelf *e)
 	printf("Sections\n");
 	printf("      Type       Offset  Chunk  Elems  Bytes\n");
 	for (i=0 ; i<e->eh.sec_count ; i++) {
+		struct emelf_section *sec = e->section + i;
 		printf("  %-3i %-10s %-7i %-6i %-6i %-6i\n",
 			i,
-			emelf_section_types_n[e->section[i].type],
-			e->section[i].offset,
-			emelf_elem_sizes[e->section[i].type],
-			e->section[i].size,
-			emelf_elem_sizes[e->section[i].type] * e->section[i].size
+			emelf_section_types_n[sec->type],
+			sec->offset,
+			emelf_elem_sizes[sec->type],
+			sec->size,
+			emelf_elem_sizes[sec->type] * sec->size
 		);
 	}
 }
@@ -118,17 +119,18 @@ void emelf_print_relocs(struct emelf *e)
 	printf("Relocations\n");
 	printf("  Addr    Value   Reloc\n");
 	for (i=0 ; i<e->reloc_count ; i++) {
-		printf("  0x%04x  %-7i ", e->reloc[i].addr, (int16_t) e->image[e->reloc[i].addr]);
-		if (e->reloc[i].flags & EMELF_RELOC_BASE) {
+		struct emelf_reloc *rel = e->reloc + i;
+		printf("  0x%04x  %-7i ", rel->addr, (int16_t) e->image[rel->addr]);
+		if (rel->flags & EMELF_RELOC_BASE) {
 			printf("@start ");
-			if (e->reloc[i].flags & EMELF_RELOC_SYM) printf("%s %s",
-				(e->reloc[i].flags & EMELF_RELOC_SYM_NEG) ? "-" : "+",
-				e->symbol_names + e->symbol[e->reloc[i].sym_idx].offset
+			if (rel->flags & EMELF_RELOC_SYM) printf("%s %s",
+				(rel->flags & EMELF_RELOC_SYM_NEG) ? "-" : "+",
+				e->symbol_names + e->symbol[rel->sym_idx].offset
 			);
 		} else {
-			if (e->reloc[i].flags & EMELF_RELOC_SYM) printf("%s%s",
-				(e->reloc[i].flags & EMELF_RELOC_SYM_NEG) ? "-" : "",
-				e->symbol_names + e->symbol[e->reloc[i].sym_idx].offset
+			if (rel->flags & EMELF_RELOC_SYM) printf("%s%s",
+				(rel->flags & EMELF_RELOC_SYM_NEG) ? "-" : "",
+				e->symbol_names + e->symbol[rel->sym_idx].offset
 			);
 		}
 		printf("\n");
@@ -147,10 +149,11 @@ void emelf_print_symbols(struct emelf *e)
 
 	printf("Symbols\n");
 	for (i=0 ; i<e->symbol_count; i++) {
-		printf("  %-10s = ", e->symbol_names + e->symbol[i].offset);
-		if (e->symbol[i].flags & EMELF_SYM_GLOBAL) {
-			printf("%i", e->symbol[i].value);
-			if (e->symbol[i].flags & EMELF_SYM_RELATIVE) printf(" + @start");
+		struct emelf_symbol *sym = e->symbol + i;
+		printf("  %-10s = ", e->symbol_names + sym->offset);
+		if (sym->flags & EMELF_SYM_GLOBAL) {
+			printf("%i", sym->value);
+			if (sym->flags & EMELF_SYM_RELATIVE) printf(" + @start");
 		} else {
 			printf("?");
 		}
@@ -277,12 +280,12 @@ int main(int argc, char **argv)
 
 	if (output_image) {
 		f = fopen(output_image, "w");
-		int pos = e->image_pos;
+		int pos = e->image_size;
 		while (pos >= 0) {
 			e->image[pos] = htons(e->image[pos]);
 			pos--;
 		}
-		fwrite(e->image, sizeof(uint16_t), e->image_pos, f);
+		fwrite(e->image, sizeof(uint16_t), e->image_size, f);
 		fclose(f);
 	}
 

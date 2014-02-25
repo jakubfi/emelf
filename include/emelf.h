@@ -141,7 +141,7 @@ struct emelf {
 
 	unsigned amax;
 	uint16_t image[IMAGE_MAX];
-	unsigned image_pos;
+	unsigned image_size;
 
 	struct emelf_reloc *reloc;
 	int reloc_slots;

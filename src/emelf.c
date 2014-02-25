@@ -49,28 +49,28 @@ static void antohs(uint16_t *t, int len)
 // -----------------------------------------------------------------------
 static size_t nfread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
-	int res;
-	res = fread(ptr, size, nmemb, stream);
+	int res = fread(ptr, size, nmemb, stream);
 	if (res < 0) {
 		return res;
 	}
 
-	antohs((uint16_t*)ptr, size*nmemb/2);
+	antohs(ptr, size * nmemb / 2);
+
 	return res;
 }
 
 // -----------------------------------------------------------------------
 static size_t nfwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
-	int res;
 	uint16_t *tmp = malloc(size * nmemb);
 	if (!tmp) {
 		return -1;
 	}
 	memcpy(tmp, ptr, size * nmemb);
-	ahtons(tmp, size*nmemb/2);
+	ahtons(tmp, size * nmemb / 2);
 
-	res = fwrite(tmp, size, nmemb, stream);
+	int res = fwrite(tmp, size, nmemb, stream);
+
 	free(tmp);
 	return res;
 }
@@ -80,7 +80,7 @@ struct emelf * emelf_create(unsigned type, unsigned cpu)
 {
 	struct emelf *e = NULL;
 
-	if ((type < EMELF_UNKNOWN) || (type > EMELF_TYPE_MAX)) {
+	if ((type <= EMELF_UNKNOWN) || (type >= EMELF_TYPE_MAX)) {
 		goto cleanup;
 	}
 
@@ -117,6 +117,10 @@ cleanup:
 // -----------------------------------------------------------------------
 void emelf_destroy(struct emelf *e)
 {
+	if (!e) {
+		return;
+	}
+
 	free(e->section);
 	free(e->reloc);
 	free(e->symbol);
@@ -150,7 +154,7 @@ int emelf_section_add(struct emelf *e, int type)
 	}
 
 	// reallocate sections if necessary
-	if (e->eh.sec_count >= e->section_slots) {
+	while (e->eh.sec_count >= e->section_slots) {
 		e->section = realloc(e->section, ALLOC_SEGMENT * SIZE_SECTION);
 		if (!e->section) {
 			return EMELF_E_ALLOC;
@@ -176,19 +180,19 @@ int emelf_image_append(struct emelf *e, uint16_t *i, unsigned ilen)
 	}
 
 	// add image section
-	if (!e->image_pos) {
+	if (e->image_size <= 0) {
 		res = emelf_section_add(e, EMELF_SEC_IMAGE);
 		if (res != EMELF_E_OK) {
 			return res;
 		}
 	}
 
-	if (e->image_pos+ilen > e->amax) {
+	if (e->image_size + ilen > e->amax) {
 		return EMELF_E_ADDR;
 	}
 
-	memcpy(e->image+e->image_pos, i, SIZE_WORD*ilen);
-	e->image_pos += ilen;
+	memcpy(e->image + e->image_size, i, SIZE_WORD * ilen);
+	e->image_size += ilen;
 
 	return EMELF_E_OK;
 }
@@ -199,6 +203,10 @@ int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned flags, int sym_idx)
 	assert(e);
 
 	int res;
+
+	if (e->reloc_count >= 65535) {
+		return EMELF_E_COUNT;
+	}
 
 	if (addr > e->amax) {
 		return EMELF_E_ADDR;
@@ -213,7 +221,7 @@ int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned flags, int sym_idx)
 	}
 
 	// reallocate relocations if necessary
-	if (e->reloc_count >= e->reloc_slots) {
+	while (e->reloc_count >= e->reloc_slots) {
 		e->reloc = realloc(e->reloc, ALLOC_SEGMENT * SIZE_RELOC);
 		if (!e->reloc) {
 			return EMELF_E_ALLOC;
@@ -239,6 +247,10 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t v
 
 	int res;
 	struct emelf_symbol *sym;
+
+	if (e->symbol_count >= 65535) {
+		return EMELF_E_COUNT;
+	}
 
 	// add symbol sections and hash if none
 	if (!e->symbol_slots) {
@@ -272,7 +284,7 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t v
 	}
 
 	// realloc symbols if necessary
-	if (e->symbol_count >= e->symbol_slots) {
+	while (e->symbol_count >= e->symbol_slots) {
 		e->symbol = realloc(e->symbol, ALLOC_SEGMENT * SIZE_SYMBOL);
 		if (!e->symbol) {
 			emelf_errno = EMELF_E_ALLOC;
@@ -311,7 +323,7 @@ struct emelf * emelf_load(FILE *f)
 	int i;
 	int res;
 
-	struct emelf *e = malloc(SIZE_EMELF);
+	struct emelf *e = calloc(1, SIZE_EMELF);
 	if (!e) {
 		emelf_errno = EMELF_E_ALLOC;
 		goto cleanup;
@@ -323,7 +335,7 @@ struct emelf * emelf_load(FILE *f)
 		emelf_errno = EMELF_E_FREAD;
 		goto cleanup;
 	}
-	res = nfread(((char*)e)+EMELF_MAGIC_LEN, SIZE_HEADER-EMELF_MAGIC_LEN, 1, f);
+	res = nfread((char*)e + EMELF_MAGIC_LEN, SIZE_HEADER - EMELF_MAGIC_LEN, 1, f);
 	if (res < 0) {
 		emelf_errno = EMELF_E_FREAD;
 		goto cleanup;
@@ -359,25 +371,29 @@ struct emelf * emelf_load(FILE *f)
 
 	// load sections
 	for (i=0 ; i<e->eh.sec_count ; i++) {
-		fseek(f, e->section[i].offset, SEEK_SET);
-		switch (e->section[i].type) {
+
+		struct emelf_section *sec = e->section + i;
+
+		fseek(f, sec->offset, SEEK_SET);
+
+		switch (sec->type) {
 			case EMELF_SEC_IMAGE:
-				res = nfread(e->image, SIZE_WORD, e->section[i].size, f);
-				e->image_pos = res;
+				res = nfread(e->image, SIZE_WORD, sec->size, f);
+				e->image_size = res;
 				break;
 			case EMELF_SEC_RELOC:
-				e->reloc = malloc(SIZE_RELOC * e->section[i].size);
-				res = nfread(e->reloc, SIZE_RELOC, e->section[i].size, f);
+				e->reloc = malloc(SIZE_RELOC * sec->size);
+				res = nfread(e->reloc, SIZE_RELOC, sec->size, f);
 				e->reloc_count = e->reloc_slots = res;
 				break;
 			case EMELF_SEC_SYM:
-				e->symbol = malloc(SIZE_SYMBOL * e->section[i].size);
-				res = nfread(e->symbol, SIZE_SYMBOL, e->section[i].size, f);
+				e->symbol = malloc(SIZE_SYMBOL * sec->size);
+				res = nfread(e->symbol, SIZE_SYMBOL, sec->size, f);
 				e->symbol_count = e->symbol_slots = res;
 				break;
 			case EMELF_SEC_SYM_NAMES:
-				e->symbol_names = malloc(SIZE_CHAR * e->section[i].size);
-				res = fread(e->symbol_names, SIZE_CHAR, e->section[i].size, f);
+				e->symbol_names = malloc(SIZE_CHAR * sec->size);
+				res = fread(e->symbol_names, SIZE_CHAR, sec->size, f);
 				e->symbol_names_len = e->symbol_names_space = res;
 				break;
 			case EMELF_SEC_DEBUG:
@@ -391,6 +407,7 @@ struct emelf * emelf_load(FILE *f)
 				emelf_errno = EMELF_E_SECTION;
 				goto cleanup;
 		}
+
 		if (res < 0) {
 			emelf_errno = EMELF_E_FREAD;
 			goto cleanup;
@@ -426,7 +443,7 @@ int emelf_header_write(struct emelf *e, FILE *f)
 		return EMELF_E_FWRITE;
 	}
 
-	res = nfwrite(((char*)e)+EMELF_MAGIC_LEN, SIZE_HEADER-EMELF_MAGIC_LEN, 1, f);
+	res = nfwrite((char*)e + EMELF_MAGIC_LEN, SIZE_HEADER - EMELF_MAGIC_LEN, 1, f);
 	if (res < 0) {
 		return EMELF_E_FWRITE;
 	}
@@ -442,16 +459,18 @@ int emelf_write(struct emelf *e, FILE *f)
 	int i;
 	int res = 0;
 
+	// write header
 	res = emelf_header_write(e, f);
 	if (res != EMELF_E_OK) {
 		return res;
 	}
 
+	// write section contents
 	for (i=0 ; i<e->eh.sec_count ; i++) {
 		e->section[i].offset = ftell(f);
 		switch (e->section[i].type) {
 			case EMELF_SEC_IMAGE:
-				res = nfwrite(e->image, SIZE_WORD, e->image_pos, f);
+				res = nfwrite(e->image, SIZE_WORD, e->image_size, f);
 				break;
 			case EMELF_SEC_RELOC:
 				res = nfwrite(e->reloc, SIZE_RELOC, e->reloc_count, f);
@@ -472,9 +491,11 @@ int emelf_write(struct emelf *e, FILE *f)
 				res = 0;
 				return EMELF_E_SECTION;
 		}
+
 		if (res < 0) {
 			return EMELF_E_FWRITE;
 		}
+
 		e->section[i].size = res;
 	}
 
@@ -482,11 +503,14 @@ int emelf_write(struct emelf *e, FILE *f)
 	if (e->eh.sec_header < 0) {
 		return EMELF_E_FWRITE;
 	}
+
+	// write sections
 	res = nfwrite(e->section, SIZE_SECTION, e->eh.sec_count, f);
 	if (res < 0) {
 		return EMELF_E_FWRITE;
 	}
 
+	// rewrite header (updates section location)
 	res = emelf_header_write(e, f);
 	if (res != EMELF_E_OK) {
 		return res;
