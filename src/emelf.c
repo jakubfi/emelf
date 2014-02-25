@@ -238,7 +238,7 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t v
 	assert(e);
 
 	int res;
-	struct edh_elem *sym;
+	struct emelf_symbol *sym;
 
 	// add symbol sections and hash if none
 	if (!e->symbol_slots) {
@@ -258,7 +258,7 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t v
 	// if symbol is defined, return its index
 	sym = edh_get(e->hsymbol, sym_name);
 	if (sym) {
-		return sym->value;
+		return sym - e->symbol;
 	}
 
 	// realloc symbol_names if necessary
@@ -292,22 +292,17 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t v
 	strcpy(e->symbol_names + e->symbol_names_len, sym_name);
 	e->symbol_names_len += strlen(sym_name) + 1;
 
-	edh_add(e->hsymbol, sym_name, 0, s->offset);
+	edh_add(e->hsymbol, sym_name, e->symbol + e->symbol_count);
 
 	e->symbol_count++;
 
-	return s->offset;
+	return e->symbol_count-1;
 }
 
 // -----------------------------------------------------------------------
 struct emelf_symbol * emelf_symbol_get(struct emelf *e, char *sym_name)
 {
-	struct edh_elem *elem;
-	elem = edh_get(e->hsymbol, sym_name);
-	if (!elem) {
-		return NULL;
-	}
-	return e->symbol + elem->value;
+	return edh_get(e->hsymbol, sym_name);
 }
 
 // -----------------------------------------------------------------------
@@ -406,7 +401,7 @@ struct emelf * emelf_load(FILE *f)
 	if (e->symbol_slots) {
 		e->hsymbol = edh_create(16000);
 		for (i=0 ; i<e->symbol_count ; i++) {
-			edh_add(e->hsymbol, e->symbol_names + e->symbol[i].offset, 0, e->symbol[i].offset);
+			edh_add(e->hsymbol, e->symbol_names + e->symbol[i].offset, e->symbol + i);
 		}
 	}
 

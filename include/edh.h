@@ -20,8 +20,7 @@
 
 struct edh_elem {
 	char *name;
-	int type;
-	int value;
+	struct emelf_symbol *s;
 	struct edh_elem *next;
 };
 
@@ -32,8 +31,8 @@ struct edh_table {
 
 struct edh_table * edh_create(int size);
 unsigned edh_hash(struct edh_table *dh, char *name);
-struct edh_elem * edh_get(struct edh_table *dh, char *name);
-struct edh_elem * edh_add(struct edh_table *dh, char *name, int type, int value);
+struct emelf_symbol * edh_get(struct edh_table *dh, char *name);
+struct emelf_symbol * edh_add(struct edh_table *dh, char *name, struct emelf_symbol *s);
 int edh_delete(struct edh_table *dh, char *name);
 void edh_destroy(struct edh_table *dh);
 void edh_dump_stats(struct edh_table *dh);

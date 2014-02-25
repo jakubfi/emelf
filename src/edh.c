@@ -55,14 +55,14 @@ unsigned edh_hash(struct edh_table *dh, char *str)
 }
 
 // -----------------------------------------------------------------------
-struct edh_elem * edh_get(struct edh_table *dh, char *name)
+struct emelf_symbol * edh_get(struct edh_table *dh, char *name)
 {
 	unsigned hash = edh_hash(dh, name);
 	struct edh_elem *elem = dh->slots[hash];
 
 	while (elem) {
 		if (!strcmp(name, elem->name)) {
-			return elem;
+			return elem->s;
 		}
 		elem = elem->next;
 	}
@@ -71,7 +71,7 @@ struct edh_elem * edh_get(struct edh_table *dh, char *name)
 }
 
 // -----------------------------------------------------------------------
-struct edh_elem * edh_add(struct edh_table *dh, char *name, int type, int value)
+struct emelf_symbol * edh_add(struct edh_table *dh, char *name, struct emelf_symbol *s)
 {
 	unsigned hash = edh_hash(dh, name);
 	struct edh_elem *elem = dh->slots[hash];
@@ -85,12 +85,11 @@ struct edh_elem * edh_add(struct edh_table *dh, char *name, int type, int value)
 
 	struct edh_elem *new_elem = malloc(sizeof(struct edh_elem));
 	new_elem->name = strdup(name);
-	new_elem->type = type;
-	new_elem->value = value;
+	new_elem->s = s;
 	new_elem->next = dh->slots[hash];
 	dh->slots[hash] = new_elem;
 
-	return elem;
+	return new_elem->s;
 }
 
 // -----------------------------------------------------------------------
