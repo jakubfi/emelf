@@ -277,6 +277,11 @@ int main(int argc, char **argv)
 
 	if (output_image) {
 		f = fopen(output_image, "w");
+		int pos = e->image_pos;
+		while (pos >= 0) {
+			e->image[pos] = htons(e->image[pos]);
+			pos--;
+		}
 		fwrite(e->image, sizeof(uint16_t), e->image_pos, f);
 		fclose(f);
 	}
