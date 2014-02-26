@@ -273,8 +273,12 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t v
 		return sym - e->symbol;
 	}
 
+	// pad symbol names to 16-bit
+	int sym_name_len = strlen(sym_name) + 1;
+	if (sym_name_len % 2) sym_name_len++;
+
 	// realloc symbol_names if necessary
-	while (e->symbol_names_len + strlen(sym_name) >= e->symbol_names_space) {
+	while (e->symbol_names_len + sym_name_len >= e->symbol_names_space) {
 		e->symbol_names = realloc(e->symbol_names, ALLOC_SEGMENT);
 		if (!e->symbol_names) {
 			emelf_errno = EMELF_E_ALLOC;
@@ -300,9 +304,10 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t v
 	s->offset = e->symbol_names_len;
 	s->value = value;
 
-	// store symbol name
+	// store symbol name (and pad)
 	strcpy(e->symbol_names + e->symbol_names_len, sym_name);
-	e->symbol_names_len += strlen(sym_name) + 1;
+	e->symbol_names_len += sym_name_len;
+	if (sym_name_len % 2) e->symbol_names[e->symbol_names_len-1] = '\0';
 
 	edh_add(e->hsymbol, sym_name, e->symbol + e->symbol_count);
 
