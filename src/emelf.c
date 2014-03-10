@@ -155,11 +155,11 @@ int emelf_section_add(struct emelf *e, int type)
 
 	// reallocate sections if necessary
 	while (e->eh.sec_count >= e->section_slots) {
-		e->section = realloc(e->section, ALLOC_SEGMENT * SIZE_SECTION);
+		e->section_slots += ALLOC_SEGMENT;
+		e->section = realloc(e->section, e->section_slots * SIZE_SECTION);
 		if (!e->section) {
 			return EMELF_E_ALLOC;
 		}
-		e->section_slots += ALLOC_SEGMENT;
 	}
 
 	e->section[e->eh.sec_count].type = type;
@@ -222,11 +222,11 @@ int emelf_reloc_add(struct emelf *e, unsigned addr, unsigned flags, int sym_idx)
 
 	// reallocate relocations if necessary
 	while (e->reloc_count >= e->reloc_slots) {
-		e->reloc = realloc(e->reloc, ALLOC_SEGMENT * SIZE_RELOC);
+		e->reloc_slots += ALLOC_SEGMENT;
+		e->reloc = realloc(e->reloc, e->reloc_slots * SIZE_RELOC);
 		if (!e->reloc) {
 			return EMELF_E_ALLOC;
 		}
-		e->reloc_slots += ALLOC_SEGMENT;
 	}
 
 	struct emelf_reloc *r = e->reloc + e->reloc_count;
@@ -279,22 +279,22 @@ int emelf_symbol_add(struct emelf *e, unsigned flags, char *sym_name, uint16_t v
 
 	// realloc symbol_names if necessary
 	while (e->symbol_names_len + sym_name_len >= e->symbol_names_space) {
-		e->symbol_names = realloc(e->symbol_names, ALLOC_SEGMENT);
+		e->symbol_names_space += ALLOC_SEGMENT;
+		e->symbol_names = realloc(e->symbol_names, e->symbol_names_space);
 		if (!e->symbol_names) {
 			emelf_errno = EMELF_E_ALLOC;
 			return -1;
 		}
-		e->symbol_names_space += ALLOC_SEGMENT;
 	}
 
 	// realloc symbols if necessary
 	while (e->symbol_count >= e->symbol_slots) {
-		e->symbol = realloc(e->symbol, ALLOC_SEGMENT * SIZE_SYMBOL);
+		e->symbol_slots += ALLOC_SEGMENT;
+		e->symbol = realloc(e->symbol, e->symbol_slots * SIZE_SYMBOL);
 		if (!e->symbol) {
 			emelf_errno = EMELF_E_ALLOC;
 			return -1;
 		}
-		e->symbol_slots += ALLOC_SEGMENT;
 	}
 
 	struct emelf_symbol *s = e->symbol + e->symbol_count;
