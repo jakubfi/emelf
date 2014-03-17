@@ -20,6 +20,7 @@ install(TARGETS emelfread
 
 install(TARGETS emelf
 	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
 	PUBLIC_HEADER DESTINATION include
 )
 
