@@ -41,7 +41,8 @@ char *emelf_cpu_n[] = {
 
 char *emelf_abi_types_n[] = {
 	"UNKNOWN",
-	"NONE"
+	"NONE",
+	"V1",
 };
 
 char *emelf_section_types_n[] = {
@@ -70,10 +71,10 @@ void emelf_print_header(struct emelf *e)
 	printf("EMELF header\n");
 	printf("  Magic : \\%o %s\n", *(e->eh.magic)&255, e->eh.magic+1);
 	printf("  Ver.  : %i\n", e->eh.version);
-	printf("  Type  : %s\n", emelf_types_n[e->eh.type]);
+	printf("  Type  : %i (%s)\n", e->eh.type, emelf_types_n[e->eh.type]);
 	printf("  Flags : %i\n", e->eh.flags);
-	printf("  CPU   : %s\n", emelf_cpu_n[e->eh.cpu]);
-	printf("  ABI   : %s ver. %i\n", emelf_abi_types_n[e->eh.abi], e->eh.abi_version);
+	printf("  CPU   : %i (%s)\n", e->eh.cpu, emelf_cpu_n[e->eh.cpu]);
+	printf("  ABI   : %i (%s)\n", e->eh.abi, emelf_abi_types_n[e->eh.abi]);
 	if (e->eh.flags & EMELF_FLAG_ENTRY) {
 		printf("  Entry : 0x%04x\n", e->eh.entry);
 	} else {

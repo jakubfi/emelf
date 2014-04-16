@@ -76,11 +76,15 @@ static size_t nfwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 }
 
 // -----------------------------------------------------------------------
-struct emelf * emelf_create(unsigned type, unsigned cpu)
+struct emelf * emelf_create(unsigned type, unsigned cpu, unsigned abi)
 {
 	struct emelf *e = NULL;
 
 	if ((type <= EMELF_UNKNOWN) || (type >= EMELF_TYPE_MAX)) {
+		goto cleanup;
+	}
+
+	if ((abi <= EMELF_ABI_UNKNOWN) || (abi >= EMELF_ABI_MAX)) {
 		goto cleanup;
 	}
 
@@ -94,6 +98,7 @@ struct emelf * emelf_create(unsigned type, unsigned cpu)
 	e->eh.version = EMELF_VER;
 	e->eh.type = type;
 	e->eh.cpu = cpu;
+	e->eh.abi = abi;
 
 	// update max addr according to CPU
 	switch (e->eh.cpu) {

@@ -59,7 +59,7 @@ enum emelf_types {
 	EMELF_EXEC,				// executable object
 	EMELF_RELOC,			// linkable, relocatable object
 	EMELF_CORE,				// core file
-	EMELF_TYPE_MAX,
+	EMELF_TYPE_MAX
 };
 
 enum emelf_flags {
@@ -76,6 +76,8 @@ enum emelf_cpu_types {
 enum emelf_abi_types {
 	EMELF_ABI_UNKNOWN,
 	EMELF_ABI_NONE,
+	EMELF_ABI_V1,
+	EMELF_ABI_MAX
 };
 
 enum emelf_section_types {
@@ -108,7 +110,6 @@ struct emelf_header {
 	uint16_t flags;
 	uint16_t cpu;
 	uint16_t abi;
-	uint16_t abi_version;
 	uint16_t entry;
 	uint16_t sec_count;
 	uint16_t sec_header_hi;
@@ -156,7 +157,7 @@ struct emelf {
 	int symbol_names_len;
 };
 
-struct emelf * emelf_create(unsigned type, unsigned cpu);
+struct emelf * emelf_create(unsigned type, unsigned cpu, unsigned abi);
 void emelf_destroy(struct emelf *e);
 
 int emelf_section_add(struct emelf *e, int type);
