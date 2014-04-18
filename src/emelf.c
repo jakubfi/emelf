@@ -360,6 +360,18 @@ struct emelf * emelf_load(FILE *f)
 		emelf_errno = EMELF_E_VERSION;
 		goto cleanup;
 	}
+	if ((e->eh.abi <= EMELF_ABI_UNKNOWN) || (e->eh.abi >= EMELF_ABI_MAX)) {
+		emelf_errno = EMELF_E_ABI;
+		goto cleanup;
+	}
+	if ((e->eh.cpu <= EMELF_CPU_UNKNOWN) || (e->eh.cpu >= EMELF_CPU_MAX)) {
+		emelf_errno = EMELF_E_CPU;
+		goto cleanup;
+	}
+	if ((e->eh.type <= EMELF_UNKNOWN) || (e->eh.type >= EMELF_TYPE_MAX)) {
+		emelf_errno = EMELF_E_TYPE;
+		goto cleanup;
+	}
 
 	// load section list
 	e->section = malloc(SIZE_SECTION * e->eh.sec_count);

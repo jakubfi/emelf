@@ -52,6 +52,9 @@ enum emelf_errors {
 	EMELF_E_SECTION,
 	EMELF_E_MAGIC,
 	EMELF_E_VERSION,
+	EMELF_E_ABI,
+	EMELF_E_TYPE,
+	EMELF_E_CPU,
 };
 
 enum emelf_types {
@@ -71,6 +74,7 @@ enum emelf_cpu_types {
 	EMELF_CPU_UNKNOWN,
 	EMELF_CPU_MERA400,
 	EMELF_CPU_MX16,
+	EMELF_CPU_MAX
 };
 
 enum emelf_abi_types {
