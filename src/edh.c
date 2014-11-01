@@ -143,7 +143,7 @@ void edh_destroy(struct edh_table *dh)
 void edh_dump_stats(struct edh_table *dh)
 {
 	int i;
-	int elem_total = 0, collisions = 0;
+	int elem_total = 0, collisions = 0, max_depth = 0;
 
 	struct edh_elem *elem;
 
@@ -153,6 +153,7 @@ void edh_dump_stats(struct edh_table *dh)
 
 	for(i=0 ; i<dh->size ; i++) {
 		elem = dh->slots[i];
+		int depth = 0;
 		while (elem) {
 			elem_total++;
 			elem_slot[i]++;
@@ -160,12 +161,14 @@ void edh_dump_stats(struct edh_table *dh)
 				collisions++;
 			}
 			elem = elem->next;
+			if (depth > max_depth) max_depth = depth;
 		}
 	}
 
 	printf("-----------------------------------\n");
 	printf("      Slots: %d\n", dh->size);
 	printf("   Elements: %d\n", elem_total);
+	printf("  Max depth: %d\n", max_depth);
 	printf(" Collisions: %d\n", collisions);
 	printf("   Collided: \n");
 	for(i=0 ; i<dh->size ; i++) {
@@ -173,6 +176,8 @@ void edh_dump_stats(struct edh_table *dh)
 			printf(" %10d: %d\n", i, elem_slot[i]-1);
 		}
 	}
+
+	free(elem_slot);
 }
 
 // vim: tabstop=4 autoindent
