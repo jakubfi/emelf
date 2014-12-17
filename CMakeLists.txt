@@ -8,8 +8,27 @@ set(EMELF_VERSION ${EMELF_VERSION_MAJOR}.${EMELF_VERSION_MINOR}.${EMELF_VERSION_
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-add_definitions(-Wall -std=c99 -D_XOPEN_SOURCE=700 -O2 -DEMELF_VERSION="${EMELF_VERSION}" -g)
+add_definitions(-Wall -std=c99 -D_XOPEN_SOURCE=700 -O2 -DEMELF_VERSION="${EMELF_VERSION}")
 
-add_subdirectory(src build)
+configure_file(
+	emelf-config.cmake.in
+	${PROJECT_BINARY_DIR}/emelf-config.cmake
+	@ONLY
+)
+
+configure_file(
+	emelf-config-version.cmake.in
+	${PROJECT_BINARY_DIR}/emelf-config-version.cmake
+	@ONLY
+)
+
+install(FILES
+	${PROJECT_BINARY_DIR}/emelf-config.cmake
+	${PROJECT_BINARY_DIR}/emelf-config-version.cmake
+	DESTINATION lib/emelf
+	COMPONENT dev
+)
+
+add_subdirectory(src)
 
 # vim: tabstop=4
