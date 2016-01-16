@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.4)
 project(emelf C)
-
+include(appversion.cmake)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_definitions(-Wall -std=c99 -D_XOPEN_SOURCE=700 -O2 -DEMELF_VERSION="${APP_VERSION}")
