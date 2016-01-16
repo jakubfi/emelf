@@ -5,7 +5,7 @@ add_library(emelf-lib SHARED
 
 set_target_properties(emelf-lib PROPERTIES
 	OUTPUT_NAME "emelf"
-	SOVERSION ${EMELF_VERSION_MAJOR}.${EMELF_VERSION_MINOR}
+	SOVERSION ${APP_VERSION_MAJOR}.${APP_VERSION_MINOR}
 	PUBLIC_HEADER "${CMAKE_SOURCE_DIR}/include/emelf.h"
 )
 
