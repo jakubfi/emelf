@@ -10,8 +10,8 @@ set_target_properties(emelf-lib PROPERTIES
 )
 
 install(TARGETS emelf-lib
-	LIBRARY DESTINATION lib
-	PUBLIC_HEADER DESTINATION include
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 add_executable(emelfread
@@ -21,7 +21,7 @@ add_executable(emelfread
 target_link_libraries(emelfread emelf-lib)
 
 install(TARGETS emelfread
-	RUNTIME DESTINATION bin
+	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 # vim: tabstop=4
