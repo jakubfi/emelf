@@ -21,6 +21,10 @@
 #include <stdio.h>
 #include <inttypes.h>
 
+#ifdef __cplusplus
+extern "C"
+#endif
+
 #define ALLOC_SEGMENT 1024
 
 #define IMAGE_MAX_MERA400 32 * 1024
@@ -177,6 +181,10 @@ struct emelf * emelf_load(FILE *f);
 int emelf_write(struct emelf *e, FILE *f);
 
 int emelf_has_entry(struct emelf *e);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
