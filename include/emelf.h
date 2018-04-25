@@ -22,7 +22,7 @@
 #include <inttypes.h>
 
 #ifdef __cplusplus
-extern "C"
+extern "C" {
 #endif
 
 #define ALLOC_SEGMENT 1024
