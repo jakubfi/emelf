@@ -109,6 +109,7 @@ enum emelf_reloc_flags {
 	EMELF_RELOC_BASE	= 1 << 0,
 	EMELF_RELOC_SYM		= 1 << 1,
 	EMELF_RELOC_SYM_NEG	= 1 << 2,
+	EMELF_RELOC_BYTE	= 1 << 3,
 };
 
 struct emelf_header {
